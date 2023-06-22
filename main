@@ -1,0 +1,40 @@
+from flask import Flask, render_template, request, redirect, url_for
+from datetime import datetime
+
+app = Flask(__name__)
+meetings = []
+
+@app.route('/')
+def home():
+    return render_template('index.html', meetings=meetings)
+
+@app.route('/schedule', methods=['GET', 'POST'])
+def schedule():
+    if request.method == 'POST':
+        title = request.form['title']
+        date = request.form['date']
+        time = request.form['time']
+        datetime_str = f'{date} {time}'
+        datetime_obj = datetime.strptime(datetime_str, '%Y-%m-%d %H:%M')
+        meeting = {'title': title, 'datetime': datetime_obj}
+        meetings.append(meeting)
+        return redirect(url_for('home'))
+    return render_template('schedule.html')
+
+@app.route('/join/<int:index>', methods=['GET', 'POST'])
+def join(index):
+    if request.method == 'POST':
+        meeting = meetings[index]
+        attendee = request.form['attendee']
+        meeting.setdefault('attendees', []).append(attendee)
+        return redirect(url_for('home'))
+    meeting = meetings[index]
+    return render_template('join.html', meeting=meeting, index=index)
+
+@app.route('/cancel/<int:index>')
+def cancel(index):
+    meetings.pop(index)
+    return redirect(url_for('home'))
+
+if __name__ == '__main__':
+    app.run(debug=True)
